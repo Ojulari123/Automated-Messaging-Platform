@@ -13,7 +13,7 @@ The abbreviation 'AMS' is used throughout the source code and database to refer 
 
 ## File Structure
 - main.py # Starts app, sets up lifespan
-- user.py # Authenticatiom, user routes
+- user.py # Authentication, user routes
 - message.py # Auto/custom message routes
 - schemas.py # Request/response schemas
 - tables.py # DB models & connection

@@ -12,7 +12,6 @@ The abbreviation 'AMS' is used throughout the source code and database to refer 
 - dotenv
 
 ## File Structure
-.
 - main.py # Starts app, sets up lifespan
 - user.py # Auth, user routes
 - message.py # Auto/custom message routes

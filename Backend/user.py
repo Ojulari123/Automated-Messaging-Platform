@@ -170,11 +170,22 @@ async def reject_all_pending_users(db: Session = Depends(get_db), user: User = D
     db.commit()
     return  {"detail": "All pending users have been rejected and deleted successfully"}
 
-@user_router.get("/view-date-table", response_model=List[DatesSchema])
-async def view_date_table(db: Session = Depends(get_db), user: User = Depends(auth_current_user)):
+@user_router.get("/view-dates-table", response_model=List[DatesSchema])
+async def view_dates_table(db: Session = Depends(get_db), user: User = Depends(auth_current_user)):
     await role_checker(required_role="admin", user=user)
     view_dates_table = db.query(Dates).all()
     return view_dates_table
+
+@user_router.get("/query-dates-table/{user_id}", response_model=List[DatesSchema])
+async def query_dates_table(user_id: int, db: Session = Depends(get_db), user: User = Depends(auth_current_user)):
+    await role_checker(required_role="admin", user=user)
+    if not user_id:
+        raise HTTPException(status_code=404, detail="Enter a User ID")
+    
+    dates = db.query(Dates).filter(Dates.user_id == user_id).all()
+    if not dates:
+        raise HTTPException(status_code=404, detail="No event(s) on this date for this User ID")
+    return dates
 
 @user_router.get("/retrieve-all-admin-members", response_model=List[UserResponse])
 async def retrieve_all_admin_members(db: Session = Depends(get_db), user: User = Depends(auth_current_user)):
@@ -190,7 +201,7 @@ async def retrieve_admin_member(user_id: Optional[int] = None, username: Optiona
     elif username:
         admin_member = db.query(User).filter(User.username == username).first()
     else:
-        raise HTTPException(status_code=400, detail="Provide either user_id or username")
+        raise HTTPException(status_code=404, detail="Provide either user_id or username")
 
     if not admin_member:
         raise HTTPException(status_code=404, detail="User not found")

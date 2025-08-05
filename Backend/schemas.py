@@ -70,7 +70,6 @@ class EventType(str, Enum):
     birthday = "birthday"
     anniversary = "anniversary"
     others = "others"
-    custom = "custom"
 
 class MessagePreview(BaseModel):
     username: str

@@ -105,7 +105,7 @@ async def set_custom_message(custom_message_data: CustomMessage, db: Session = D
             recipients = (db.query(Dates).filter(extract("month", Dates.date) == today.month, extract("day", Dates.date) == today.day, Dates.label.notin_(["birthday", "anniversary"])).all())
     
         else:
-                raise HTTPException(status_code=400, detail="Invalid event type")
+                raise HTTPException(status_code=400, detail="Invalid event type, enter a valid event type (birthday, anniversary, others)")
         
     if not recipients:
         raise HTTPException(status_code=404, detail="No recipients found")

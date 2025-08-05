@@ -13,11 +13,11 @@ The abbreviation 'AMS' is used throughout the source code and database to refer 
 
 ## File Structure
 - main.py # Starts app, sets up lifespan
-- user.py # Auth, user routes
+- user.py # Authenticatiom, user routes
 - message.py # Auto/custom message routes
 - schemas.py # Request/response schemas
 - tables.py # DB models & connection
-- func.py # Utility funcs (e.g., role check)
+- func.py # Utility functions (e.g., role check)
 - .env # Environment variables
 
 # How to compile the endpoints:
@@ -27,7 +27,7 @@ The abbreviation 'AMS' is used throughout the source code and database to refer 
 ## Authentication & Users
 POST /user/register-member – User signup
 <!-- Everything else is only for admins only -->
-POST /user/register-admin – Admin signup (admin-only)
+POST /user/register-admin – Admin signup
 POST /user/auth-login – Login, get tokens
 POST /user/new-members/activate – Approve 1 pending member
 POST /user/new-members/activate-all – Approve all pending members

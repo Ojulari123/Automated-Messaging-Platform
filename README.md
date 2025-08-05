@@ -11,15 +11,15 @@ The abbreviation 'AMS' is used throughout the source code and database to refer 
 - OAuth2 + JWT  
 - dotenv
 
-## Folder Structure
+## File Structure
 .
-├── main.py # Starts app, sets up lifespan
-├── user.py # Auth, user routes
-├── message.py # Auto/custom message routes
-├── schemas.py # Request/response schemas
-├── tables.py # DB models & connection
-├── func.py # Utility funcs (e.g., role check)
-├── .env # Environment variables
+- main.py # Starts app, sets up lifespan
+- user.py # Auth, user routes
+- message.py # Auto/custom message routes
+- schemas.py # Request/response schemas
+- tables.py # DB models & connection
+- func.py # Utility funcs (e.g., role check)
+- .env # Environment variables
 
 # How to compile the endpoints:
 - First, navigate to the "Backend" directory(cd Backend)

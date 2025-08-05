@@ -4,6 +4,9 @@ from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
 import os
 from schemas import StatusEnum
+from dotenv import load_dotenv
+
+load_dotenv()
 
 AMS_USER=os.getenv("AMS_USER")
 AMS_PASSWORD=os.getenv("AMS_PASSWORD")
@@ -28,7 +31,7 @@ class User(Base):
     dob = Column(Date)
     profile_pic = Column(LargeBinary,nullable=True)
     role = Column(String(50), default="user")
-    status = Column(Enum(StatusEnum), default="pending", nullable=False)
+    status = Column(Enum(StatusEnum), default=StatusEnum.pending, nullable=False)
     date = Column(DateTime, default=datetime.now)
 
     other_dates = relationship("Dates", back_populates="user", cascade="all, delete-orphan")
@@ -36,7 +39,7 @@ class User(Base):
 class Dates(Base):
     __tablename__ = "other_dates"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("user_info.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("user_info.id", ondelete="CASCADE"), nullable=False)
     label = Column(String(256), nullable=False)  
     date = Column(Date, nullable=False)
 

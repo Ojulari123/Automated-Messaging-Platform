@@ -7,6 +7,7 @@ from user import user_router
 from schemas import DummyUser
 from tables import get_db, User, Dates
 from func import create_fake_user
+from message import message_router
 
 dummy_user_data = DummyUser()
 
@@ -44,3 +45,4 @@ class ConnectionManager:
 connection_manager = ConnectionManager()
 
 app.include_router(user_router, prefix="/user", tags=["User"])
+app.include_router(message_router, prefix="/message", tags=["Message"])

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from tables import User
+from tables import User, Dates
 from typing import List
-from schemas import UserSignUpInfo, UserResponse, Token, TokenResponse, DummyUser, StatusEnum
+from schemas import UserSignUpInfo, UserResponse, Token, TokenResponse, DummyUser, StatusEnum, DatesSchema
 from func import auth_user, auth_current_user, get_db, get_password_hash, create_access_token, create_refresh_token, get_user_by_username, role_checker
 from datetime import datetime,timedelta
 from dotenv import load_dotenv
@@ -37,6 +37,10 @@ async def add_customer_info(user: UserSignUpInfo, db: Session = Depends(get_db))
         status=StatusEnum.pending.value,
         date=datetime.now()
     )
+    if hasattr(user, "other_dates") and user.other_dates:
+        for dates in user.other_dates:
+            user_details.other_dates.append(Dates(label=dates.label, date=dates.date))
+
     db.add(user_details)
     db.commit()
     db.refresh(user_details)
@@ -61,6 +65,10 @@ async def add_admin_profile(text: UserSignUpInfo, db: Session = Depends(get_db),
         status=StatusEnum.active.value,
         date=datetime.now()
     )
+    if hasattr(user, "other_dates") and user.other_dates:
+        for dates in user.other_dates:
+            admin_profile.other_dates.append(Dates(label=dates.label, date=dates.date))
+
     db.add(admin_profile)
     db.commit()
     db.refresh(admin_profile)
@@ -77,7 +85,7 @@ async def sign_in(user: OAuth2PasswordRequestForm = Depends(), db: Session = Dep
     refresh_token = create_refresh_token(data={"sub": user_auth.username}, expires_delta=refresh_token_expires)
     return TokenResponse(access_token=access_token, refresh_token=refresh_token, expires_in=ACCESS_TOKEN_EXPIRE_MINUTES)
 
-@user_router.post("/admin-members/activate", response_model=UserResponse)
+@user_router.post("/new-members/activate", response_model=UserResponse)
 async def activate_user(user_id: Optional[int] = None, username: Optional[str] = None, db: Session = Depends(get_db), user: User = Depends(auth_current_user)):
     await role_checker(required_role="admin", user=user)
     if user_id:
@@ -96,19 +104,39 @@ async def activate_user(user_id: Optional[int] = None, username: Optional[str] =
     user_to_activate.status = "active"
     db.commit()
     db.refresh(user_to_activate)
+
+    for date_entry in user_to_activate.other_dates:
+            if date_entry.id is None: 
+                date_entry.user_id = user_to_activate.id 
+                db.add(date_entry)
+    db.commit()
     return user_to_activate
 
-@user_router.post("/admin-members/activate-all", response_model=UserResponse)
+@user_router.post("/new-members/activate-all", response_model=List[UserResponse])
 async def activate_all_pending_users(db: Session = Depends(get_db), user: User = Depends(auth_current_user)):
     await role_checker(required_role="admin", user=user)
     activate_members = db.query(User).filter(User.status == StatusEnum.pending.value).all()
-    activate_members.status = StatusEnum.active.value
+    if not activate_members:
+        raise HTTPException(status_code=404, detail="No pending users found")
+    
+    for current_status in activate_members:
+        current_status.status = StatusEnum.active.value
     db.commit()
-    db.refresh(activate_members)
+
+    for user_obj in activate_members:
+        for date_entry in user_obj.other_dates:
+            if date_entry.id is None:  
+                date_entry.user_id = user_obj.id
+                db.add(date_entry)
+    db.commit()
+
+    for current_status in activate_members:
+        db.refresh(current_status)
+
     return activate_members
 
 
-@user_router.post("/admin-members/reject")
+@user_router.post("/new-members/reject")
 async def reject_user(user_id: Optional[int] = None, username: Optional[str] = None, db: Session = Depends(get_db), user: User = Depends(auth_current_user)):
     await role_checker(required_role="admin", user=user)
     if user_id:
@@ -142,6 +170,11 @@ async def reject_all_pending_users(db: Session = Depends(get_db), user: User = D
     db.commit()
     return  {"detail": "All pending users have been rejected and deleted successfully"}
 
+@user_router.get("/view-date-table", response_model=List[DatesSchema])
+async def view_date_table(db: Session = Depends(get_db), user: User = Depends(auth_current_user)):
+    await role_checker(required_role="admin", user=user)
+    view_dates_table = db.query(Dates).all()
+    return view_dates_table
 
 @user_router.get("/retrieve-all-admin-members", response_model=List[UserResponse])
 async def retrieve_all_admin_members(db: Session = Depends(get_db), user: User = Depends(auth_current_user)):
@@ -149,7 +182,7 @@ async def retrieve_all_admin_members(db: Session = Depends(get_db), user: User =
     admin_members_list = db.query(User).filter(User.role=="admin").all()
     return admin_members_list
 
-@user_router.get("/retrieve-admin-member", response_model=UserResponse)
+@user_router.get("/retrieve-admin-member/{user}", response_model=UserResponse)
 async def retrieve_admin_member(user_id: Optional[int] = None, username: Optional[str] = None, db: Session = Depends(get_db), user: User = Depends(auth_current_user)):
     await role_checker(required_role="admin", user=user)
     if user_id:
@@ -233,21 +266,26 @@ async def retrieve_pending_members(db: Session = Depends(get_db), user: User = D
 async def delete_member(user_id: Optional[int] = None, username: Optional[str] = None, db: Session = Depends(get_db), user: User = Depends(auth_current_user)):
     await role_checker(required_role="admin", user=user)
     if user_id:
-        delete_user_query = db.query(User).filter(User.id == user_id).delete()
+        delete_user_query = db.query(User).filter(User.id == user_id).first()
     elif username:
-       delete_user_query = db.query(User).filter(User.username == username).delete()
+       delete_user_query = db.query(User).filter(User.username == username).first()
     else:
         raise HTTPException(status_code=400, detail="Provide either user_id or username")
     
     if not delete_user_query:
         raise HTTPException(status_code=404, detail="User not found")
 
+    db.delete(delete_user_query)
     db.commit()
     return {"detail": "Member has been deleted"}
 
-@user_router.delete("/delete-all-member")
+@user_router.delete("/delete-all-members")
 async def delete_all_members(db: Session = Depends(get_db), user: User = Depends(auth_current_user)):
     await role_checker(required_role="admin", user=user)
-    db.query(User).delete()
+    
+    all_users = db.query(User).all()
+    for users in all_users:
+        db.delete(users) 
+
     db.commit()
     return {"detail": "All members have been deleted :("}

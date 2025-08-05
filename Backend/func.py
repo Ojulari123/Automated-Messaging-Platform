@@ -36,6 +36,8 @@ def create_fake_user(user: DummyUser, db: Session = Depends(get_db)) -> User:
         status=StatusEnum.active.value,
         date=datetime.now()
         )
+    for od in user.other_dates or []:
+            add_dummy_user.other_dates.append(Dates(label=od.label, date=od.date))
     db.add(add_dummy_user)
     db.commit()
     db.refresh(add_dummy_user)

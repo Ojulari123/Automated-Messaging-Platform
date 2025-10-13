@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from tables import User, Dates
+from tables import User, Dates, get_db
 from typing import List
 from schemas import UserSignUpInfo, UserResponse, Token, TokenResponse, DummyUser, StatusEnum, DatesSchema
-from func import auth_user, auth_current_user, get_db, get_password_hash, create_access_token, create_refresh_token, get_user_by_username, role_checker
+from func import auth_user, auth_current_user, get_password_hash, create_access_token, create_refresh_token, get_user_by_username, role_checker
 from datetime import datetime,timedelta
 from dotenv import load_dotenv
 from typing import Optional
@@ -17,7 +17,6 @@ ALGORITHM = os.getenv("ALGORITHM")
 SECRET_KEY = os.getenv("SECRET_KEY")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
-
 
 @user_router.post("/register-member", response_model=Token)
 async def add_customer_info(user: UserSignUpInfo, db: Session = Depends(get_db)):
@@ -135,7 +134,6 @@ async def activate_all_pending_users(db: Session = Depends(get_db), user: User =
 
     return activate_members
 
-
 @user_router.post("/new-members/reject")
 async def reject_user(user_id: Optional[int] = None, username: Optional[str] = None, db: Session = Depends(get_db), user: User = Depends(auth_current_user)):
     await role_checker(required_role="admin", user=user)
@@ -219,7 +217,7 @@ async def update_members_role(
     await role_checker(required_role="admin", user=user)
 
     if not user_id and not username:
-        raise HTTPException(status_code=400, detail="Provide either user_id or username")
+        raise HTTPException(status_code=404, detail="Provide either user_id or username")
 
     if user_id:
         user_query = db.query(User).filter(User.id == user_id).first()
@@ -230,13 +228,13 @@ async def update_members_role(
         raise HTTPException(status_code=404, detail="User not found")
 
     if user_query.status == StatusEnum.pending.value:
-        raise HTTPException(status_code=400, detail="User has to be active before being eligible to change roles")
+        raise HTTPException(status_code=404, detail="User has to be active before being eligible to change roles")
 
     if user_query.role == user_role:
-        raise HTTPException(status_code=400, detail="User already has this role")
+        raise HTTPException(status_code=404, detail="User already has this role")
 
     if user_role not in ("admin", "user"):
-        raise HTTPException(status_code=400, detail="Invalid role: must be 'admin' or 'user'")
+        raise HTTPException(status_code=404, detail="Invalid role: must be 'admin' or 'user'")
 
     user_query.role = user_role
     db.commit()

@@ -1,5 +1,5 @@
 # Automated-Messaging-Platform [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Ojulari123/Automated-Messaging-Platform)
-A small, reliable, easy-to-use web-based system that automatically sends occasion messages (e.g., birthdays, anniversaries) to approved members(Admin controls approval & rejection of memberships). Messages use reusable templates so the admin doesn’t have to compose them manually (it is allows for custom messaging)
+A small, reliable, easy-to-use web-based system that automatically sends occasion messages (e.g., birthdays, anniversaries) to approved members (Admin controls approval & rejection of memberships). Messages use reusable templates so the admin doesn’t have to compose them manually (it allows for custom messaging)
 
 The abbreviation 'AMS' is used throughout the source code and database to refer to the Automated Messaging System, for the sake of brevity.
 
